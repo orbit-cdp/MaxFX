@@ -1,5 +1,5 @@
 use crate::storage;
-use crate::dependencies::pool::{Client as PoolClient, Request};
+use crate::dependencies::blendpool::{Client as PoolClient, Request};
 use soroban_sdk::{contract, contractclient, contractimpl, Address, Env, IntoVal, vec, Vec, Val, Symbol, panic_with_error};
 use soroban_sdk::auth::{ContractContext, InvokerContractAuthEntry, SubContractInvocation};
 use crate::error::PositionManagerError;

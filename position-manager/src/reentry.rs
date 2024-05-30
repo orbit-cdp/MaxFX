@@ -8,24 +8,6 @@ pub fn blend_borrow(e: &Env, user: Address, lend: Address, borrow: Address, amou
     let pool = storage::get_pool(&e);
     let pool_client = PoolClient::new(&e, &pool);
 
-    //user.require_auth();
-    // let args: Vec<Val> = vec![
-    //     &e,
-    //     from.into_val(&e),
-    //     pool.into_val(&e),
-    //     amount.into_val(&e),
-    // ];
-    // e.authorize_as_current_contract(vec![
-    //     &e,
-    //     InvokerContractAuthEntry::Contract(SubContractInvocation {
-    //         context: ContractContext {
-    //             contract: lend.clone(),
-    //             fn_name: Symbol::new(&e, "transfer"),
-    //             args: args.clone(),
-    //         },
-    //         sub_invocations: vec![&e],
-    //     })
-    // ]);
     pool_client.submit(&user, &user, &user,&vec![
         &e,
         Request {
@@ -43,11 +25,17 @@ pub fn blend_borrow(e: &Env, user: Address, lend: Address, borrow: Address, amou
 
 pub fn amm_swap(e: &Env, token_a: Address, token_b: Address, amount: i128,  user: Address) -> i128 {
     let amm = storage::get_amm(&e);
-    let soroswap_router_client = crate::dependencies::amm::Client::new(&e, &amm);
+    let pair_client = crate::dependencies::amm::Client::new(&e, &amm);
     let token_client = token::Client::new(&e, &token_b);
-
     token_client.transfer(&user, &amm, &amount);
-    //TODO: Calculate amount_0_out
-    soroswap_router_client.swap(&3000000000, &0, &user);
+
+    let (reserve_0, reserve_1) = pair_client.get_reserves();
+    let swap_amount_fees = amount.checked_mul(997).unwrap();
+    let numerator = swap_amount_fees.checked_mul(reserve_0).unwrap();
+    let denominator = (reserve_1.checked_mul(1000)).unwrap().checked_add(swap_amount_fees).unwrap();
+    let amount_0_out = numerator.checked_div(denominator).unwrap();
+    let amount_1_out = 0_i128;
+
+    pair_client.swap(&amount_0_out, &amount_1_out, &user);
     return 0;
 }

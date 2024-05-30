@@ -11,6 +11,8 @@ const ADMIN_KEY: &str = "Admin";
 const POOL_KEY: &str = "Pool";
 const FEE_KEY: &str = "Fee";
 
+const AMM_KEY: &str = "Amm";
+
 /// Check if the contract has been initialized
 pub fn get_is_init(e: &Env) -> bool {
     e.storage().instance().has(&Symbol::new(e, IS_INIT_KEY))
@@ -97,4 +99,21 @@ pub fn set_pool(e: &Env, pool: &Address) {
     e.storage()
         .instance()
         .set::<Symbol, Address>(&Symbol::new(e, POOL_KEY), pool);
+}
+
+/********** AMM **********/
+
+/// Fetch the current AMM Address
+pub fn get_amm(e: &Env) -> Address {
+    e.storage()
+        .instance()
+        .get(&Symbol::new(e, AMM_KEY))
+        .unwrap_optimized()
+}
+
+/// Set the AMM Address
+pub fn set_amm(e: &Env, amm: &Address) {
+    e.storage()
+        .instance()
+        .set::<Symbol, Address>(&Symbol::new(e, AMM_KEY), amm);
 }

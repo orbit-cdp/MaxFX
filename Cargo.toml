@@ -20,4 +20,7 @@ codegen-units = 1
 lto = true
 
 [workspace.dependencies.soroban-sdk]
-version = "20.5.0"
+version = "21.0.1-preview.3"
+
+[workspace.dependencies.soroban-token-sdk]
+version = "21.0.1-preview.3"

@@ -9,39 +9,16 @@ pub struct PositionManagerContract;
 #[contractclient(name="PositionManagerClient")]
 pub trait PositionManager {
 
-    /// Initialize the treasury
-    ///
-    /// ### Arguments
-    /// * `admin` - The Address for the admin
-    /// * `fee_taker` - The Address for the fee taker
-    /// * `blend_pool` - The Address for the blend pool
-    ///
     fn initialize(e: Env, admin: Address, fee_taker: Address, blend_pool: Address, amm: Address);
 
-    fn pool_open_position(e: Env, user: Address, lend: Address, borrow: Address, amount: i128, amount2: i128, amount3: i128) -> i128;
+    fn pool_open_position(e: Env, user: Address, lend: Address, borrow: Address, amount: i128, amount2: i128) -> i128;
 
-    /// (Admin only) Set a new address as the admin of this pool
-    ///
-    /// ### Arguments
-    /// * `admin` - The new admin address
-    ///
-    /// ### Panics
-    /// If the caller is not the admin
     fn set_admin(e: Env, admin: Address);
 
-    /// (Admin only) set a new address as the fee taker of the protocol
-    ///
-    /// ### Arguments
-    /// * `fee_taker` - The new fee taker address
-    ///
-    /// ### Panics
-    /// If the caller is not the admin
     fn set_fee_taker(e: Env, fee_taker: Address);
 
-    /// Get token address
     fn get_fee_taker(e: Env) -> Address;
 
-    /// Get blend address
     fn get_pool(e: Env) -> Address;
 
     fn get_amm(e: Env) -> Address;
@@ -63,14 +40,13 @@ impl PositionManager for PositionManagerContract {
         storage::set_is_init(&e);
     }
 
-    fn pool_open_position(e: Env, user: Address, lend: Address, borrow: Address, amount: i128, amount2: i128, amount3: i128) -> i128 {
+    fn pool_open_position(e: Env, user: Address, lend: Address, borrow: Address, amount: i128, amount2: i128) -> i128 {
         storage::extend_instance(&e);
 
-        //TODO: Fee payment to fee taker
         user.require_auth();
 
         blend_borrow(&e, user.clone(), lend.clone(), borrow.clone(), amount, amount2.clone());
-        return amm_swap(&e, lend, borrow, amount3, user);
+        return amm_swap(&e, lend, amount2, user).expect("Swap failed");
     }
 
     fn set_admin(e: Env, new_admin: Address) {

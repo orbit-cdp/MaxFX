@@ -1,5 +1,6 @@
-use soroban_sdk::{Address, Env, token, vec, Vec};
+use soroban_sdk::{Address, Env, token, vec};
 use crate::storage;
+use crate::soroswap::{get_amount_out, SoroswapLibraryError};
 use crate::dependencies::pool::{Client as PoolClient, Request};
 
 pub fn blend_borrow(e: &Env, user: Address, lend: Address, borrow: Address, amount: i128, amount2: i128) {
@@ -8,25 +9,7 @@ pub fn blend_borrow(e: &Env, user: Address, lend: Address, borrow: Address, amou
     let pool = storage::get_pool(&e);
     let pool_client = PoolClient::new(&e, &pool);
 
-    //user.require_auth();
-    // let args: Vec<Val> = vec![
-    //     &e,
-    //     from.into_val(&e),
-    //     pool.into_val(&e),
-    //     amount.into_val(&e),
-    // ];
-    // e.authorize_as_current_contract(vec![
-    //     &e,
-    //     InvokerContractAuthEntry::Contract(SubContractInvocation {
-    //         context: ContractContext {
-    //             contract: lend.clone(),
-    //             fn_name: Symbol::new(&e, "transfer"),
-    //             args: args.clone(),
-    //         },
-    //         sub_invocations: vec![&e],
-    //     })
-    // ]);
-    pool_client.submit(&user, &user, &user,&vec![
+    pool_client.submit(&user, &user, &user, &vec![
         &e,
         Request {
             request_type: 2_u32, // Supply Collateral RequestType
@@ -41,13 +24,23 @@ pub fn blend_borrow(e: &Env, user: Address, lend: Address, borrow: Address, amou
     ]);
 }
 
-pub fn amm_swap(e: &Env, token_a: Address, token_b: Address, amount: i128,  user: Address) -> i128 {
+pub fn amm_swap(e: &Env, token_in: Address, amount: i128, user: Address) -> Result<i128, SoroswapLibraryError> {
     let amm = storage::get_amm(&e);
-    let soroswap_router_client = crate::dependencies::amm::Client::new(&e, &amm);
-    let token_client = token::Client::new(&e, &token_b);
+    let pair_contract = crate::dependencies::amm::Client::new(&e, &amm);
+    let token_client = token::Client::new(&e, &token_in);
 
+    // Transfer input tokens to the pair contract
     token_client.transfer(&user, &amm, &amount);
-    //TODO: Calculate amount_0_out
-    soroswap_router_client.swap(&3000000000, &0, &user);
-    return 0;
+
+    // Get reserves from the pair contract
+    let (reserve_0, reserve_1) = pair_contract.get_reserves();
+
+    // Calculate the amount out using the Soroswap library
+    let amount_out = get_amount_out(amount, reserve_0, reserve_1)?;
+
+    // Perform the swap
+    pair_contract.swap(&amount_out, &0, &user);
+
+    // Return the output amount
+    Ok(amount_out)
 }

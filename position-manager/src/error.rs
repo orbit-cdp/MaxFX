@@ -15,5 +15,4 @@ pub enum PositionManagerError {
     OverflowError = 12,
 
     SupplyError = 2000,
-
 }

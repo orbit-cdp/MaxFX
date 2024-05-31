@@ -16,3 +16,4 @@ Cargo.lock
 .idea/
 .soroban/
 **/node_modules/
+lib

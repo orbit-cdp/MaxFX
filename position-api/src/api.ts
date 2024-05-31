@@ -1,10 +1,10 @@
 import express, { Express, Request, Response } from "express";
 import dotenv from "dotenv";
 import { PositionManagerContract } from "./support/positionManager.js";
-import { Account, Address, Keypair, Networks, Operation, Transaction, TransactionBuilder, xdr } from "@stellar/stellar-sdk";
+import { Account, Networks, Transaction, TransactionBuilder, xdr, SorobanRpc } from "@stellar/stellar-sdk";
 import cors from "cors";
 import { config } from './utils/env_config.js';
-
+import { sendTransaction } from "./utils/tx.js";
 
 dotenv.config();
 
@@ -20,12 +20,12 @@ const BASE_FEE = 100;
 
 app.use(cors()); // Enable CORS
 app.use(express.json());  // Middleware to parse JSON request bodies
+
 interface IJson {
     user: string;
     amount: number;
     amount2: number;
 }
-
 
 app.post("/", async (req: Request, res: Response) => {
     let json: IJson = req.body;
@@ -39,24 +39,56 @@ app.post("/", async (req: Request, res: Response) => {
     const sorobanOp = leveragePosition.pool_open_position(
         json.user,
         lend,
-       borrow,
+        borrow,
         BigInt(amount * SCALAR_7),
         BigInt(amount2 * SCALAR_7),
-      );
+    );
 
     const tx = new TransactionBuilder(account, {
         fee: '100',
         networkPassphrase: Networks.TESTNET,
-      })
+    })
         .addOperation(xdr.Operation.fromXDR(sorobanOp, 'base64'))
         .setTimeout(30)
         .build();
-  
+
     res.json({
         xdr: tx.toXDR(),
-      });
+    });
+});
+
+// New endpoint for submitting signed transactions
+app.post("/submit", async (req: Request, res: Response) => {
+    const { signedXdr } = req.body;
+
+    try {
+        const transaction = new Transaction(signedXdr, Networks.TESTNET);
+
+        // Simulate the transaction
+        const account = await config.rpc.getAccount(transaction.source);
+        const simulationResult = await config.rpc.simulateTransaction(transaction);
+
+        if (SorobanRpc.Api.isSimulationError(simulationResult)) {
+            res.status(400).json({ error: simulationResult });
+            return;
+        }
+        
+        const assembledTx = SorobanRpc.assembleTransaction(transaction, simulationResult).build();
+
+        // Submit the transaction
+        const submitResult = await sendTransaction(assembledTx, () => undefined);
+
+        if (submitResult) {
+            res.json({ result: submitResult });
+        } else {
+            res.status(400).json({ error: submitResult });
+        }
+    } catch (err) {
+        const error = err as Error;
+        res.status(500).json({ error: error.message });
+    }
 });
 
 app.listen(port, () => {
-  console.log(`[server]: Server is running at http://localhost:${port}`);
+    console.log(`[server]: Server is running at http://localhost:${port}`);
 });

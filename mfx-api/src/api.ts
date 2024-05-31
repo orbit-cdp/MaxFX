@@ -1,9 +1,16 @@
 import express, { Express, Request, Response } from "express";
 import dotenv from "dotenv";
 import { PositionManagerContract } from "./support/positionManager.js";
-import { Account, Networks, Transaction, TransactionBuilder, xdr, SorobanRpc } from "@stellar/stellar-sdk";
+import {
+    Account,
+    Networks,
+    Transaction,
+    TransactionBuilder,
+    xdr,
+    SorobanRpc,
+} from "@stellar/stellar-sdk";
 import cors from "cors";
-import { config } from './utils/env_config.js';
+import { config } from "./utils/env_config.js";
 import { sendTransaction } from "./utils/tx.js";
 import { sign } from "crypto";
 
@@ -20,7 +27,7 @@ const FEE_RATE = 0.003;
 const BASE_FEE = 100;
 
 app.use(cors()); // Enable CORS
-app.use(express.json());  // Middleware to parse JSON request bodies
+app.use(express.json()); // Middleware to parse JSON request bodies
 
 interface IJson {
     user: string;
@@ -34,7 +41,7 @@ app.post("/", async (req: Request, res: Response) => {
     const leveragePosition = new PositionManagerContract(contract);
 
     let amount = json.amount;
-    let amount2 = json.amount2;
+    let amount2 = Math.floor(json.amount2);
 
     console.log(json);
     const account = await config.rpc.getAccount(config.admin.publicKey());
@@ -43,26 +50,38 @@ app.post("/", async (req: Request, res: Response) => {
         lend,
         borrow,
         BigInt(amount * SCALAR_7),
-        BigInt(amount2 * SCALAR_7),
+        BigInt(amount2 * SCALAR_7)
     );
 
     const tx = new TransactionBuilder(account, {
-        fee: '100',
+        fee: "100",
         networkPassphrase: Networks.TESTNET,
     })
-        .addOperation(xdr.Operation.fromXDR(sorobanOp, 'base64'))
+        .addOperation(xdr.Operation.fromXDR(sorobanOp, "base64"))
         .setTimeout(30)
         .build();
 
+    const simulationResult = await config.rpc.simulateTransaction(tx);
+
+    if (SorobanRpc.Api.isSimulationError(simulationResult)) {
+        console.log(simulationResult);
+        res.status(400).json({ error: simulationResult });
+        return;
+    }
+
+    const assembledTx = SorobanRpc.assembleTransaction(
+        tx,
+        simulationResult
+    ).build();
+
     res.json({
-        xdr: tx.toXDR(),
+        xdr: assembledTx.toXDR(),
     });
 });
 
 interface SignedXDR {
     signedXdr: string;
     publicKey: string;
-
 }
 
 // New endpoint for submitting signed transactions
@@ -70,27 +89,27 @@ app.post("/submit", async (req: Request, res: Response) => {
     const signedXdr: SignedXDR = req.body;
 
     try {
-        const account = await config.rpc.getAccount(signedXdr.publicKey);
         //const transaction = new Transaction(signedXdr.signedXdr, Networks.TESTNET);
-        const transaction = TransactionBuilder.fromXDR(signedXdr.signedXdr, Networks.TESTNET);
-
-        // Simulate the transaction
-        const simulationResult = await config.rpc.simulateTransaction(transaction);
-
-        if (SorobanRpc.Api.isSimulationError(simulationResult)) {
-          console.log(simulationResult);
-            res.status(400).json({ error: simulationResult });
-            return;
-        }
-        
-        const assembledTx = SorobanRpc.assembleTransaction(transaction, simulationResult).build();
+        const transaction = TransactionBuilder.fromXDR(
+            signedXdr.signedXdr,
+            Networks.TESTNET
+        );
 
         // Submit the transaction
-        const submitResult = await sendTransaction(assembledTx, PositionManagerContract.parsers.pool_open_position);
-        console.log(submitResult)
+        //@ts-ignore
+        const submitResult = await sendTransaction(
+            transaction,
+            PositionManagerContract.parsers.pool_open_position
+        );
+        console.log(submitResult);
 
         if (submitResult) {
-            res.json({ result: submitResult });
+            // Divide the BigInt by 10000000
+            const result = submitResult / BigInt(10000000);
+
+            // Convert to a regular number
+            const resultAsNumber = Number(result);
+            res.json({ result: resultAsNumber });
         } else {
             res.status(400).json({ error: submitResult });
         }

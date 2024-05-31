@@ -67,29 +67,6 @@ const kit = new StellarWalletsKit({
   ],
 });
 
-const sendTransaction = async (transaction) => {
-  const requestBody = {
-    "jsonrpc": "2.0",
-    "id": 1,
-    "method": "sendTransaction",
-    "params": {
-      "transaction": transaction
-    }
-  };
-
-  try {
-    const response = await axios.post('https://testnet.rpc.stellar.org', requestBody, {
-      headers: {
-        'Content-Type': 'application/json',
-      }
-    });
-
-    console.log(response.data);
-  } catch (error) {
-    console.error('Error:', error);
-  }
-}
-
 const apiFunction = async () => {
   console.log('API Function called');
   console.log('Selected:', selected.value);
@@ -113,7 +90,10 @@ const apiFunction = async () => {
           });
 
           console.log('Signed XDR:', signedXDR);
-          await sendTransaction(signedXDR);
+          const response2 = await axios.post('http://localhost:3000/submit', {
+            signedXDR: signedXDR,
+          });
+          console.log('Response:', response2.data);
         } catch (error) {
           console.error('Error making request:', error);
         }

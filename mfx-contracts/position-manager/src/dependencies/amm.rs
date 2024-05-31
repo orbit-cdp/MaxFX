@@ -1,3 +1,3 @@
 use soroban_sdk::contractimport;
 
-contractimport!(file = "../wasm/pair.wasm");
+contractimport!(file = "../wasm/soroswappair.wasm");

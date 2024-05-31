@@ -1,29 +1,37 @@
-# mfx
 
-This template should help get you started developing with Vue 3 in Vite.
 
-## Recommended IDE Setup
+#  Frontend
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
-
-## Customize configuration
-
-See [Vite Configuration Reference](https://vitejs.dev/config/).
+This frontend is part of the OrbitCDP project for the Consensus EasyA Stellar Hackathon. It provides a user interface to interact with the OrbitCDP Leverage Position API.
 
 ## Project Setup
+
+### Installation
+
+To install the required dependencies, run:
 
 ```sh
 npm install
 ```
 
-### Compile and Hot-Reload for Development
+### Running the Development Server
+
+To compile and hot-reload the frontend for development, use the following command:
 
 ```sh
 npm run dev
 ```
 
-### Compile and Minify for Production
+### Building 
+
+To compile and minify the frontend, use the following command:
 
 ```sh
 npm run build
 ```
+
+---
+
+Both the API and frontend parts of the OrbitCDP project for creating and managing leverage positions on the Stellar network. The API handles transaction creation and submission, while the frontend provides an intuitive interface for users to interact with the system.
+
+

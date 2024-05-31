@@ -1,3 +1,3 @@
 use soroban_sdk::contractimport;
 
-contractimport!(file = "../wasm/pool.wasm");
+contractimport!(file = "../wasm/blendpool.wasm");

@@ -1,6 +1,9 @@
 import { Address, Horizon, Contract, SorobanRpc, xdr} from '@stellar/stellar-sdk';
 import { Spec as ContractSpec, i128 } from '@stellar/stellar-sdk/contract';
 
+/**
+ * Interface representing a network configuration.
+ */
 export interface Network {
   rpc: string;
   passphrase: string;
@@ -8,13 +11,19 @@ export interface Network {
   opts?: Horizon.Server.Options;
 }
 
+/**
+ * Object containing network configurations.
+ */
 export const networks = {
   testnet: {
     networkPassphrase: "Test SDF Network ; September 2015",
     contractId: "CDRUKELLVJ636NTH43M52SW6YZGWHNCYZXBZWERREKJTPPS3NPQTN62S",
   }
-}
+};
 
+/**
+ * Object containing error messages for various error codes.
+ */
 export const Errors = {
   1: { message: "Internal error" },
   3: { message: "Already initialized error" },
@@ -25,6 +34,9 @@ export const Errors = {
   2000: { message: "Supply error" },
 };
 
+/**
+ * Class representing the PositionManager contract.
+ */
 export class PositionManagerContract extends Contract {
   static spec: ContractSpec = new ContractSpec([
     // Add the spec string here

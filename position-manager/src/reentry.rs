@@ -37,5 +37,5 @@ pub fn amm_swap(e: &Env, token_a: Address, token_b: Address, amount: i128,  user
     let amount_1_out = 0_i128;
 
     pair_client.swap(&amount_0_out, &amount_1_out, &user);
-    return 0;
+    return amount_0_out;
 }

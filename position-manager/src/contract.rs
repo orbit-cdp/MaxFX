@@ -1,6 +1,6 @@
 
 use crate::storage;
-use soroban_sdk::{contract, contractclient, contractimpl, Address, Env, panic_with_error};
+use soroban_sdk::{contract, contractclient, contractimpl, Address, Env, panic_with_error, token};
 use crate::error::PositionManagerError;
 use crate::reentry::{amm_swap, blend_borrow};
 
@@ -19,7 +19,7 @@ pub trait PositionManager {
     ///
     fn initialize(e: Env, admin: Address, fee_taker: Address, blend_pool: Address, amm: Address);
 
-    fn pool_open_position(e: Env, user: Address, lend: Address, borrow: Address, amount: i128, amount2: i128, amount3: i128) -> i128;
+    fn pool_open_position(e: Env, user: Address, lend: Address, borrow: Address, amount: i128, amount2: i128) -> i128;
 
     /// (Admin only) Set a new address as the admin of this pool
     ///
@@ -64,14 +64,19 @@ impl PositionManager for PositionManagerContract {
         storage::set_is_init(&e);
     }
 
-    fn pool_open_position(e: Env, user: Address, lend: Address, borrow: Address, amount: i128, amount2: i128, amount3: i128) -> i128 {
+    fn pool_open_position(e: Env, user: Address, lend: Address, borrow: Address, amount: i128, amount2: i128) -> i128 {
         storage::extend_instance(&e);
+        let fee_taker = storage::get_fee(&e);
 
-        //TODO: Fee payment to fee taker
         user.require_auth();
 
+        //TODO: Fix math around fees
+        //let token_client = token::Client::new(&e, &lend);
+        //let fee_taker = storage::get_fee(&e);
+        //let fee_amount = amount.checked_mul(997).unwrap();
+        //token_client.transfer(&user, &fee_taker, &amount);
         blend_borrow(&e, user.clone(), lend.clone(), borrow.clone(), amount, amount2.clone());
-        return amm_swap(&e, lend, borrow, amount3, user);
+        return amm_swap(&e, lend, borrow, amount2, user);
     }
 
     fn set_admin(e: Env, new_admin: Address) {

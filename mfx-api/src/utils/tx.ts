@@ -60,6 +60,7 @@ export async function sendTransaction<T>(
 ): Promise<T | undefined> {
   try {
     let send_tx_response = await config.rpc.sendTransaction(transaction);
+    console.log('Transaction sent with hash:', send_tx_response.hash);
     const curr_time = Date.now();
     while (send_tx_response.status === 'TRY_AGAIN_LATER' && Date.now() - curr_time < 20000) {
       await new Promise((resolve) => setTimeout(resolve, 4000));

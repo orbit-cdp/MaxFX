@@ -91,7 +91,8 @@ const apiFunction = async () => {
 
           console.log('Signed XDR:', signedXDR);
           const response2 = await axios.post('http://localhost:3000/submit', {
-            signedXDR: signedXDR,
+            signedXdr: signedXDR,
+            publicKey: publicKey.value,
           });
           console.log('Response:', response2.data);
         } catch (error) {

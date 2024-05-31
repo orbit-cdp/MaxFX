@@ -1,9 +1,10 @@
 import express from "express";
 import dotenv from "dotenv";
 import { PositionManagerContract } from "./support/positionManager.js";
-import { Networks, TransactionBuilder, xdr } from "@stellar/stellar-sdk";
+import { Networks, TransactionBuilder, xdr, SorobanRpc } from "@stellar/stellar-sdk";
 import cors from "cors";
 import { config } from './utils/env_config.js';
+import { sendTransaction } from "./utils/tx.js";
 dotenv.config();
 const app = express();
 const port = process.env.PORT || 3000;
@@ -17,6 +18,7 @@ app.use(cors()); // Enable CORS
 app.use(express.json()); // Middleware to parse JSON request bodies
 app.post("/", async (req, res) => {
     let json = req.body;
+    console.log(json);
     const leveragePosition = new PositionManagerContract(contract);
     let amount = json.amount;
     let amount2 = json.amount2;
@@ -33,6 +35,36 @@ app.post("/", async (req, res) => {
     res.json({
         xdr: tx.toXDR(),
     });
+});
+// New endpoint for submitting signed transactions
+app.post("/submit", async (req, res) => {
+    const signedXdr = req.body;
+    try {
+        const account = await config.rpc.getAccount(signedXdr.publicKey);
+        //const transaction = new Transaction(signedXdr.signedXdr, Networks.TESTNET);
+        const transaction = TransactionBuilder.fromXDR(signedXdr.signedXdr, Networks.TESTNET);
+        // Simulate the transaction
+        const simulationResult = await config.rpc.simulateTransaction(transaction);
+        if (SorobanRpc.Api.isSimulationError(simulationResult)) {
+            res.status(400).json({ error: simulationResult });
+            return;
+        }
+        const assembledTx = SorobanRpc.assembleTransaction(transaction, simulationResult).build();
+        // Submit the transaction
+        const submitResult = await sendTransaction(assembledTx, PositionManagerContract.parsers.pool_open_position);
+        console.log(submitResult);
+        if (submitResult) {
+            res.json({ result: submitResult });
+        }
+        else {
+            res.status(400).json({ error: submitResult });
+        }
+    }
+    catch (err) {
+        const error = err;
+        console.log(error);
+        res.status(500).json({ error: error.message });
+    }
 });
 app.listen(port, () => {
     console.log(`[server]: Server is running at http://localhost:${port}`);

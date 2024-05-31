@@ -30,12 +30,13 @@ pub fn amm_swap(e: &Env, token_a: Address, token_b: Address, amount: i128,  user
     token_client.transfer(&user, &amm, &amount);
 
     let (reserve_0, reserve_1) = pair_client.get_reserves();
-    let swap_amount_fees = amount.checked_mul(997).unwrap();
+    let swap_amount_fees = amount.checked_mul(995).unwrap();
     let numerator = swap_amount_fees.checked_mul(reserve_0).unwrap();
     let denominator = (reserve_1.checked_mul(1000)).unwrap().checked_add(swap_amount_fees).unwrap();
     let amount_0_out = numerator.checked_div(denominator).unwrap();
     let amount_1_out = 0_i128;
 
     pair_client.swap(&amount_0_out, &amount_1_out, &user);
+    pair_client.skim(&user);
     return amount_0_out;
 }

@@ -4,6 +4,10 @@
 
 Traders often face significant challenges in accessing different currencies on-chain and effectively leveraging large capital. MFX addresses these issues by utilizing Stellar's robust ecosystem and technical resources.
 
+## Demo
+[![Demo](https://raw.githubusercontent.com/orbit-cdp/maxfx/main/demo.png)]
+(https://raw.githubusercontent.com/orbit-cdp/maxfx/main/demo.mp4)
+
 ## Integrations with Stellar dApps
 
 MFX leverages several dApps built on Stellar:
